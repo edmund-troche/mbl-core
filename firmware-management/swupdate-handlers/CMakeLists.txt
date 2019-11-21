@@ -6,4 +6,4 @@ add_library(rootfs-handler OBJECT rootfs-handler.cpp)
 
 target_compile_options(rootfs-handler PUBLIC -Wall -Wextra -std=c++17)
 
-install(rootfs-handler TARGETS lib)
+install(TARGETS rootfs-handler DESTINATION lib)
