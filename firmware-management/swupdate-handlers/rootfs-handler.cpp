@@ -65,7 +65,7 @@ public:
         else if (block_device::is_active(dev_b))
         {
             active_bank_label = labels.second;
-            active_bank_label = labels.first;
+            target_bank_label = labels.first;
         }
     }
 
