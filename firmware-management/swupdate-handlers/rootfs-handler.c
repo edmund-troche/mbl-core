@@ -2,15 +2,6 @@
 #include "handler.h"
 #include "util.h"
 
-
-__attribute__((constructor))
-void rootfs_handler_init(void)
-{
-    register_handler("rootfs update"
-                     , rootfs_handler
-                     , HANDLER_MASK::IMAGE_HANDLER, nullptr);
-}
-
 int rootfs_handler(struct img_type *img
                    , void __attribute__ ((__unused__)) *data)
 {
@@ -27,3 +18,14 @@ int rootfs_handler(struct img_type *img
 
     return ret;
 }
+
+
+__attribute__((constructor))
+void rootfs_handler_init(void)
+{
+    register_handler("rootfs update"
+                     , rootfs_handler
+                     , HANDLER_MASK::IMAGE_HANDLER, nullptr);
+}
+
+
