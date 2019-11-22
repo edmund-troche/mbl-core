@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 3.5)
 
 project(swupdate-handlers)
 
-add_library(rootfs-handler OBJECT rootfs-handler.cpp)
+add_library(rootfs-handler OBJECT rootfs-handler.c)
 
 target_include_directories(rootfs-handler PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_compile_options(rootfs-handler PUBLIC -Wall -Wextra -std=c++17)
+target_compile_options(rootfs-handler PUBLIC -Wall -Wextra)
 
-install(TARGETS rootfs-handler DESTINATION lib)
+#install(TARGETS rootfs-handler LIBRARY DESTINATION lib COMPONENT library)
