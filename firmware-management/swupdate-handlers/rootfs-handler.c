@@ -6,7 +6,7 @@
 int rootfs_handler(struct img_type *img
                    , void __attribute__ ((__unused__)) *data)
 {
-    int fd = openfile(img->device);
+    int fd = openfileoutput(img->device);
     if (fd < 0)
         return fd;
 
