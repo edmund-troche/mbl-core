@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "swupdate.h"
 #include "handler.h"
 #include "util.h"
@@ -9,7 +10,7 @@ int rootfs_handler(struct img_type *img
     if (fd < 0)
         return fd;
 
-    const int ret = copyimage(&fd, img, nullptr);
+    const int ret = copyimage(&fd, img, NULL);
     if (ret < 0)
         return ret;
 
@@ -25,7 +26,8 @@ void rootfs_handler_init(void)
 {
     register_handler("rootfs update"
                      , rootfs_handler
-                     , HANDLER_MASK::IMAGE_HANDLER, nullptr);
+                     , IMAGE_HANDLER
+                     , NULL);
 }
 
 
