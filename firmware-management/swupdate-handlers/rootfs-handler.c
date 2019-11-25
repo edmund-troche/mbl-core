@@ -8,52 +8,52 @@
 
 // Read a file to a string.
 // This will not work on files greater than 4Gb as fseek will fail.
-// The returned string buffer is allocated on the heap, it is the caller's
-// responsibility to free the memory allocated to the buffer.
-char* read_file_to_string(const char* const filepath)
+// The in/out param buf is allocated on the heap, it is the caller's
+// responsibility to free the memory allocated to buf.
+int read_file_to_string(const char* const filepath, char** buf)
 {
-    char* return_val;
+    int return_val;
 
     FILE* fp = fopen(filepath, "r");
     if (fp == NULL)
-        return NULL;
+        return 1;
 
     if (fseek(fp, 0, SEEK_END) == -1)
     {
-        return_val = NULL;
+        return_val = 1;
         goto close;
     }
 
     const long file_len = ftell(fp);
     if (file_len == -1)
     {
-        return_val = NULL;
+        return_val = 1;
         goto close;
     }
 
     if (fseek(fp, 0, SEEK_SET) == -1)
     {
-        return_val = NULL;
+        return_val = 1;
         goto close;
     }
 
-    char* buffer = malloc(file_len + 1);
-    if (buffer == NULL)
-        return NULL;
+    (*buf) = malloc(file_len + 1);
+    if (!*buf)
+        return 1;
 
-    fread(buffer, 1, file_len, fp);
+    fread(buf, 1, file_len, fp);
     if (feof(fp) != 0 || ferror(fp) != 0)
     {
-        return_val = NULL;
+        return_val = 1;
         goto close;
     }
 
-    buffer[file_len] = '\0';
-    return_val = buffer;
+    *buf[file_len] = '\0';
+    return_val = 0;
 
 close:
     if (fclose(fp) == -1)
-        return NULL;
+        return 1;
 
     return return_val;
 }
@@ -66,39 +66,65 @@ int string_endswith(const char* const substr, const char* const fullstr)
     return strncmp(&fullstr[strlen(fullstr) - strlen(substr)], substr, strlen(substr));
 }
 
-char *concat_strs(const char* const str_a, const char* const str_b)
+int concat_strs(const char* const str_a, const char* const str_b, char** buf)
 {
     const size_t buf_size = sizeof(str_a) + sizeof(str_b) + 1;
-    char *dest = malloc(buf_size);
-    snprintf(dest, buf_size, "%s%s", str_a, str_b);
-    return dest;
+    (*buf) = malloc(buf_size);
+    if (!*buf)
+        return 1;
+    snprintf(*buf, buf_size, "%s%s", str_a, str_b);
+    return 0;
 }
 
-char *get_mounted_device_filename(const char* const mount_point)
+int get_mounted_device_filename(const char* const mount_point, char** buf)
 {
     FILE *mtab = setmntent("/etc/mtab", "r");
-    char *devname = NULL;
     struct mntent *mntent_desc;
 
     while ((mntent_desc = getmntent(mtab)))
     {
         if (strcmp(mount_point, mntent_desc->mnt_dir) == 0)
         {
-            return mntent_desc->mnt_fsname;
+            const size_t buf_size = strlen(mntent_desc->mnt_fsname) + 1;
+            (*buf) = malloc(buf_size);
+            if (!strncpy(*buf, mntent_desc->mnt_fsname, buf_size-1))
+                return 1;
+
+            *buf[buf_size-1] = '\0';
+            return 0;
         }
     }
 
-    return devname;
+    return 1;
 }
 
-char *find_target_partition(const char *const mnt_fsname, const char *const bank1_part_num, const char *const bank2_part_num)
+int find_target_partition(const char *const mnt_fsname
+                          , const char *const bank1_part_num
+                          , const char *const bank2_part_num
+                          , char** output_buf)
 {
-    if (string_endswith(mnt_fsname, bank1_part_num))
-        return concat_strs(mnt_fsname, bank2_part_num);
-    else if (string_endswith(mnt_fsname, bank2_part_num))
-        return concat_strs(mnt_fsname, bank1_part_num);
+    char str_to_tokenise[strlen(mnt_fsname) + 1];
+    if (!strncpy(str_to_tokenise, mnt_fsname, strlen(mnt_fsname)))
+        return 1;
 
-    return NULL;
+    str_to_tokenise[strlen(mnt_fsname)] = '\0';
+    static const char* const delim = "p";
+    char* token;
+    token = strtok(str_to_tokenise, delim);
+
+    if (token == NULL)
+        return 1;
+
+    if (string_endswith(mnt_fsname, bank1_part_num))
+    {
+        return concat_strs(token, bank2_part_num, output_buf);
+    }
+    else if (string_endswith(mnt_fsname, bank2_part_num))
+    {
+        return concat_strs(token, bank1_part_num, output_buf);
+    }
+
+    return 1;
 }
 
 int rootfs_handler(struct img_type *img
@@ -107,27 +133,27 @@ int rootfs_handler(struct img_type *img
     static const char *const BANK1_PART_NUM_FILE = "/config/factory/part-info/MBL_ROOT_FS_PART_NUMBER_BANK1";
     static const char *const BANK2_PART_NUM_FILE = "/config/factory/part-info/MBL_ROOT_FS_PART_NUMBER_BANK2";
     int return_value = 0;
-    char *b1_pnum = NULL;
-    char *b2_pnum = NULL;
-    char *target_part = NULL;
+    char *b1_pnum;
+    char *b2_pnum;
+    char *target_part;
+    char *mnt_fsname;
 
-    char *mnt_fsname = get_mounted_device_filename("/");
-    if (!mnt_fsname)
+    if (get_mounted_device_filename("/", &mnt_fsname) != 0)
         return 1;
 
-    b1_pnum = read_file_to_string(BANK1_PART_NUM_FILE);
-    if (!b1_pnum)
-        return 1;
-
-    b2_pnum = read_file_to_string(BANK2_PART_NUM_FILE);
-    if (!b2_pnum)
+    if (read_file_to_string(BANK1_PART_NUM_FILE, &b1_pnum) != 0)
     {
         return_value = 1;
         goto free;
     }
 
-    target_part = find_target_partition(mnt_fsname, b1_pnum, b2_pnum);
-    if (!target_part)
+    if (read_file_to_string(BANK2_PART_NUM_FILE, &b2_pnum) != 0)
+    {
+        return_value = 1;
+        goto free;
+    }
+
+    if (find_target_partition(mnt_fsname, b1_pnum, b2_pnum, &target_part) != 0)
     {
         return_value = 1;
         goto free;
@@ -148,9 +174,11 @@ int rootfs_handler(struct img_type *img
     }
 
 free:
+    free(mnt_fsname);
     free(b1_pnum);
     free(b2_pnum);
     free(target_part);
+
     return return_value;
 }
 
