@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include "swupdate.h"
 
 // Read a file to a string.
 // This will not work on files greater than 4Gb as fseek will fail.
@@ -9,8 +10,9 @@
 // responsibility to free the memory allocated to buf.
 int read_file_to_string(const char* const filepath, char** buf)
 {
-    int return_val;
+    int return_val = 1;
 
+    INFO("%s%s", "Opening file: ", filepath);
     FILE* fp = fopen(filepath, "r");
     if (fp == NULL)
         return 1;
@@ -22,6 +24,7 @@ int read_file_to_string(const char* const filepath, char** buf)
     }
 
     const long file_len = ftell(fp);
+    INFO("%s%i", "file length: ", file_len);
     if (file_len == -1)
     {
         return_val = 1;
@@ -35,6 +38,7 @@ int read_file_to_string(const char* const filepath, char** buf)
     }
 
     (*buf) = malloc(file_len + 1);
+    INFO("%s%i", "allocated buffer size", sizeof(buf));
     if (!*buf)
     {
         return_val = 1;
@@ -48,6 +52,7 @@ int read_file_to_string(const char* const filepath, char** buf)
         goto close;
     }
 
+    INFO("%s%s", "Buffer contains: ", buf);
     buf[file_len-1] = '\0';
     return_val = 0;
 
