@@ -19,6 +19,7 @@ int rootfs_handler(struct img_type *img
     INFO("%s", "Getting mounted device filename");
     if (get_mounted_device_filename("/", &mnt_fsname) != 0)
         return 1;
+    INFO("%s%s", "mounted device filename is: ", mnt_fsname);
 
     INFO("%s%s", "Reading file to string: ", BANK1_PART_NUM_FILE);
     if (read_file_to_string(BANK1_PART_NUM_FILE, &b1_pnum) != 0)
@@ -26,6 +27,7 @@ int rootfs_handler(struct img_type *img
         return_value = 1;
         goto free;
     }
+    INFO("%s%s", "B1 part num is: ", b1_pnum);
 
     INFO("%s%s", "Reading file to string: ", BANK2_PART_NUM_FILE);
     if (read_file_to_string(BANK2_PART_NUM_FILE, &b2_pnum) != 0)
@@ -33,6 +35,7 @@ int rootfs_handler(struct img_type *img
         return_value = 1;
         goto free;
     }
+    INFO("%s%s", "B2 part num is: ", b2_pnum);
 
     INFO("%s%s", "Finding target partition: ", mnt_fsname);
     if (find_target_partition(mnt_fsname, b1_pnum, b2_pnum, &target_part) != 0)
@@ -40,7 +43,7 @@ int rootfs_handler(struct img_type *img
         return_value = 1;
         goto free;
     }
-
+    INFO("%s%s", "target partition is: ", target_part);
 
     int fd = openfileoutput(target_part);
     if (fd < 0)

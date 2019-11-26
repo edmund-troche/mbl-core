@@ -103,7 +103,10 @@ int find_target_partition(const char *const mnt_fsname
 {
     int return_value = 1;
 
-    char* mnt_device_cpy = malloc(sizeof(mnt_fsname));
+    char* mnt_device_cpy = malloc(strlen(mnt_fsname) + 1);
+    if (!mnt_device_cpy)
+        return 1;
+
     if (!strncpy(mnt_device_cpy, mnt_fsname, strlen(mnt_fsname)))
     {
         return_value = 1;
@@ -120,11 +123,11 @@ int find_target_partition(const char *const mnt_fsname
         goto free;
     }
 
-    if (string_endswith(mnt_fsname, bank1_part_num))
+    if (string_endswith(mnt_fsname, bank1_part_num) == 0)
     {
         return_value = concat_strs(token, bank2_part_num, output_buf);
     }
-    else if (string_endswith(mnt_fsname, bank2_part_num))
+    else if (string_endswith(mnt_fsname, bank2_part_num) == 0)
     {
         return_value = concat_strs(token, bank1_part_num, output_buf);
     }
