@@ -4,6 +4,7 @@
 #include "handler.h"
 #include "util.h"
 
+
 int rootfs_handler(struct img_type *img
                    , void __attribute__ ((__unused__)) *data)
 {
@@ -35,6 +36,7 @@ int rootfs_handler(struct img_type *img
         return_value = 1;
         goto free;
     }
+
 
     int fd = openfileoutput(target_part);
     if (fd < 0)

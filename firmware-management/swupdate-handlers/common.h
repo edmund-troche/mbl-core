@@ -10,7 +10,6 @@ int concat_strs(const char* const str_a, const char* const str_b, char** buf);
 
 int get_mounted_device_filename(const char* const mount_point, char** buf);
 
-
 int find_target_partition(const char *const mnt_fsname
                           , const char *const bank1_part_num
                           , const char *const bank2_part_num

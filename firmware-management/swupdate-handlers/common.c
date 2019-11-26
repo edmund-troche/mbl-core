@@ -45,7 +45,7 @@ int read_file_to_string(const char* const filepath, char** buf)
         goto close;
     }
 
-    *buf[file_len] = '\0';
+    buf[file_len - 1] = '\0';
     return_val = 0;
 
 close:
@@ -65,7 +65,7 @@ int string_endswith(const char* const substr, const char* const fullstr)
 
 int concat_strs(const char* const str_a, const char* const str_b, char** buf)
 {
-    const size_t buf_size = sizeof(str_a) + sizeof(str_b) + 1;
+    const size_t buf_size = strlen(str_a) + strlen(str_b) + 1;
     (*buf) = malloc(buf_size);
     if (!*buf)
         return 1;
@@ -84,10 +84,11 @@ int get_mounted_device_filename(const char* const mount_point, char** buf)
         {
             const size_t buf_size = strlen(mntent_desc->mnt_fsname) + 1;
             (*buf) = malloc(buf_size);
-            if (!strncpy(*buf, mntent_desc->mnt_fsname, buf_size-1))
+            if (!strncpy(*buf, mntent_desc->mnt_fsname, buf_size))
+            {
                 return 1;
-
-            *buf[buf_size-1] = '\0';
+            }
+            buf[buf_size-1] = '\0';
             return 0;
         }
     }
@@ -100,27 +101,36 @@ int find_target_partition(const char *const mnt_fsname
                           , const char *const bank2_part_num
                           , char** output_buf)
 {
-    char str_to_tokenise[strlen(mnt_fsname) + 1];
-    if (!strncpy(str_to_tokenise, mnt_fsname, strlen(mnt_fsname)))
-        return 1;
+    int return_value = 1;
 
-    str_to_tokenise[strlen(mnt_fsname)] = '\0';
+    char* mnt_device_cpy = malloc(sizeof(mnt_fsname));
+    if (!strncpy(mnt_device_cpy, mnt_fsname, strlen(mnt_fsname)))
+    {
+        return_value = 1;
+        goto free;
+    }
+
+    mnt_device_cpy[strlen(mnt_fsname)] = '\0';
     static const char* const delim = "p";
     char* token;
-    token = strtok(str_to_tokenise, delim);
-
+    token = strtok(mnt_device_cpy, delim);
     if (token == NULL)
-        return 1;
+    {
+        return_value = 1;
+        goto free;
+    }
 
     if (string_endswith(mnt_fsname, bank1_part_num))
     {
-        return concat_strs(token, bank2_part_num, output_buf);
+        return_value = concat_strs(token, bank2_part_num, output_buf);
     }
     else if (string_endswith(mnt_fsname, bank2_part_num))
     {
-        return concat_strs(token, bank1_part_num, output_buf);
+        return_value = concat_strs(token, bank1_part_num, output_buf);
     }
 
-    return 1;
+free:
+    free(mnt_device_cpy);
+    return return_value;
 }
 
