@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "swupdate.h"
+#include "util.h"
 
 // Read a file to a string.
 // This will not work on files greater than 4Gb as fseek will fail.
