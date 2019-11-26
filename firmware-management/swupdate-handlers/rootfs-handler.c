@@ -16,21 +16,25 @@ int rootfs_handler(struct img_type *img
     char *target_part;
     char *mnt_fsname;
 
+    INFO("%s", "Getting mounted device filename");
     if (get_mounted_device_filename("/", &mnt_fsname) != 0)
         return 1;
 
+    INFO("%s%s", "Reading file to string: ", BANK1_PART_NUM_FILE);
     if (read_file_to_string(BANK1_PART_NUM_FILE, &b1_pnum) != 0)
     {
         return_value = 1;
         goto free;
     }
 
+    INFO("%s%s", "Reading file to string: ", BANK2_PART_NUM_FILE);
     if (read_file_to_string(BANK2_PART_NUM_FILE, &b2_pnum) != 0)
     {
         return_value = 1;
         goto free;
     }
 
+    INFO("%s%s", "Finding target partition: ", mnt_fsname);
     if (find_target_partition(mnt_fsname, b1_pnum, b2_pnum, &target_part) != 0)
     {
         return_value = 1;
