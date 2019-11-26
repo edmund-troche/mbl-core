@@ -18,12 +18,16 @@ int rootfs_handler(struct img_type *img
 
     INFO("%s", "Getting mounted device filename");
     if (get_mounted_device_filename("/", &mnt_fsname) != 0)
+    {
+        ERROR("%s", "Failed to get mounted device filename.");
         return 1;
+    }
     INFO("%s%s", "mounted device filename is: ", mnt_fsname);
 
     INFO("%s%s", "Reading file to string: ", BANK1_PART_NUM_FILE);
     if (read_file_to_string(BANK1_PART_NUM_FILE, &b1_pnum) != 0)
     {
+        ERROR("%s%s", "failed to read file: ", BANK1_PART_NUM_FILE);
         return_value = 1;
         goto free;
     }
@@ -32,6 +36,7 @@ int rootfs_handler(struct img_type *img
     INFO("%s%s", "Reading file to string: ", BANK2_PART_NUM_FILE);
     if (read_file_to_string(BANK2_PART_NUM_FILE, &b2_pnum) != 0)
     {
+        ERROR("%s%s", "failed to read file: ", BANK2_PART_NUM_FILE);
         return_value = 1;
         goto free;
     }
@@ -40,6 +45,7 @@ int rootfs_handler(struct img_type *img
     INFO("%s%s", "Finding target partition: ", mnt_fsname);
     if (find_target_partition(mnt_fsname, b1_pnum, b2_pnum, &target_part) != 0)
     {
+        ERROR("%s", "Failed to find target partition.");
         return_value = 1;
         goto free;
     }

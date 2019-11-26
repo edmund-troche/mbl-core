@@ -36,7 +36,10 @@ int read_file_to_string(const char* const filepath, char** buf)
 
     (*buf) = malloc(file_len + 1);
     if (!*buf)
-        return 1;
+    {
+        return_val = 1;
+        goto close;
+    }
 
     fread(buf, 1, file_len, fp);
     if (feof(fp) != 0 || ferror(fp) != 0)
@@ -45,7 +48,7 @@ int read_file_to_string(const char* const filepath, char** buf)
         goto close;
     }
 
-    buf[file_len - 1] = '\0';
+    buf[file_len-1] = '\0';
     return_val = 0;
 
 close:
