@@ -156,12 +156,12 @@ int find_target_bank(char *dst
 
     if (str_endswith(bank1_part_num, mounted_device) == 0)
     {
-        snprintf(dst, strlen(token) + strlen(delim) + strlen(bank2_part_num), "%s%s%s", token, delim, bank2_part_num);
+        snprintf(dst, strlen(token) + strlen(delim) + strlen(bank2_part_num) + 1, "%s%s%s", token, delim, bank2_part_num);
         return_value = 0;
     }
     else if (str_endswith(bank2_part_num, mounted_device) == 0)
     {
-        snprintf(dst, strlen(token) + strlen(delim) + strlen(bank1_part_num), "%s%s%s", token, delim, bank1_part_num);
+        snprintf(dst, strlen(token) + strlen(delim) + strlen(bank1_part_num) + 1, "%s%s%s", token, delim, bank1_part_num);
         return_value = 0;
     }
     else

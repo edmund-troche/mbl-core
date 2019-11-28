@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include <unistd.h>
 #include <limits.h>
 #include "common.h"
 #include "swupdate.h"
@@ -46,13 +47,39 @@ free:
     return return_value;
 }
 
+int copy_image_to_block_device(struct img_type *img, const char *const device_filepath)
+{
+    int fd = openfileoutput(device_filepath);
+    if (fd < 0)
+    {
+        ERROR("%s%s", "Failed to open output file ", device_filepath);
+        return -1;
+    }
+
+    const int ret = copyimage(&fd, img, NULL);
+    if (ret < 0)
+    {
+        ERROR("%s%s", "Failed to copy image to target device");
+        return -1;
+    }
+
+    if (fsync(fd) == -1)
+    {
+        WARN("%s: %s", "Failed to sync filesystem", strerror(errno));
+    }
+
+    return 0;
+}
+
+
 int rootfs_handler(struct img_type *img
                    , void __attribute__ ((__unused__)) *data)
 {
     int return_value = 0;
 
+    static const char *const root_mnt_point = "/";
     char mounted_device_filepath[PATH_MAX];
-    if (get_mounted_device_path(mounted_device_filepath, "/") != 0)
+    if (get_mounted_device_path(mounted_device_filepath, root_mnt_point) != 0)
     {
         ERROR("%s", "Failed to get mounted device file path.");
         return 1;
@@ -69,29 +96,25 @@ int rootfs_handler(struct img_type *img
 
     TRACE("%s%s", "Target partition device file path is ", target_device_filepath);
 
-    int fd = openfileoutput(target_device_filepath);
-    if (fd < 0)
+    if (copy_image_to_block_device(img, target_device_filepath) == -1)
     {
-        ERROR("%s%s", "Failed to open output file ", target_device_filepath);
+        ERROR("%s %s %s", "Failed to copy image", img->fname "to device", target_device_filepath);
         return 1;
     }
 
-    const int ret = copyimage(&fd, img, NULL);
-    if (ret < 0)
-    {
-        ERROR("%s%s", "Failed to copy image to target device");
-        return 1;
-    }
-
-    TRACE("%s%s", "Unmounting device ", mounted_device_filepath);
-    if (swupdate_umount(mounted_device_filepath) == -1)
+    TRACE("%s %s", "Unmounting device", mounted_device_filepath);
+    if (swupdate_umount(root_mnt_point) == -1)
     {
         ERROR("%s %s: %s", "Failed to unmount device", mounted_device_filepath, strerror(errno));
         return 1;
     }
 
     TRACE("%s%s", "Mounting device ", target_device_filepath);
-    swupdate_mount(target_device_filepath, "/", "ext4");
+    if (swupdate_mount(target_device_filepath, root_mnt_point, "ext4") == -1)
+    {
+        ERROR("%s %s: %s", "Failed to mount device", target_device_filepath, strerror(errno));
+        return 1;
+    }
 
     return 0;
 }
